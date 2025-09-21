@@ -13,3 +13,4 @@ export async function GET(req) {
   const user = await User.findById(session.user.id); // Fetch user from DB
   return new Response(JSON.stringify({ user }), { status: 200 }); // Return user info
 }
+

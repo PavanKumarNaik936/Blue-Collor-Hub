@@ -6,7 +6,7 @@ export async function POST(req) {
   await connect();
 
   try {
-    const { name, email, password, skills, location, bio } = await req.json();
+    const { name, email, password } = await req.json();
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -22,9 +22,8 @@ export async function POST(req) {
       name,
       email,
       password: hashedPassword,
-      skills,
-      location,
-      bio,
+     
+      
     });
 
     return new Response(JSON.stringify({ message: "User created successfully", userId: user._id }), {
