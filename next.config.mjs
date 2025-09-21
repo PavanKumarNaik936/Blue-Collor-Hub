@@ -1,4 +1,11 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-export default nextConfig;
+const nextConfig = {
+    reactStrictMode: true,
+    devIndicators: {
+      buildActivity: false,
+      autoPrerender: false, // disables prerender overlay
+    },
+  };
+  
+  export default nextConfig;
+  
