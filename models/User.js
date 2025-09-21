@@ -3,24 +3,20 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema(
   {
     name: {
-
       type: String,
-      required:true,
-      unique: true,
-      trim:true
-    
+      required: false,
+      trim: true, // optional, not unique
     },
     email: {
       type: String,
       required: true,
       unique: true,
-      lowerCase:true,
+      lowercase: true, // fixed typo from lowerCase
       trim: true,
     },
     password: {
       type: String,
-      required:true
-     
+      required: false, // optional for OAuth users
     },
     phone: {
       type: String,
@@ -66,11 +62,9 @@ const userSchema = new mongoose.Schema(
         type: [Number], // [longitude, latitude]
         default: [0, 0],
       },
-     
       state: { type: String, default: null },
-       district: { type: String, default: null },
-        town: { type: String, default: null },
-     
+      district: { type: String, default: null },
+      town: { type: String, default: null },
     },
   },
   { timestamps: true }

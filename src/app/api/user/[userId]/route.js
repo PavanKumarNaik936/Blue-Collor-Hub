@@ -35,60 +35,49 @@ console.log(userId)
 
 //update user route
 
-
 export async function PATCH(req, { params }) {
   await connect();
 
   try {
-    const { userId } =await params;
+    const { userId } = params;
     const body = await req.json();
 
-    // Find existing user
     const user = await User.findById(userId);
     if (!user) {
-      return new Response(
-        JSON.stringify({ message: "User not found" }),
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ message: "User not found" }), { status: 404 });
     }
 
-    // List of top-level fields to update
+    // Fields to update
     const fieldsToUpdate = [
-      "phone",
       "name",
+      "phone",
       "title",
       "profilePic",
+      "coverImage",
       "whatsappNo",
       "skillCategories",
-      "connections",
-      "name",
       "skills",
-     
+      "connections",
     ];
 
-    // Update only if provided and not null/empty
     fieldsToUpdate.forEach((field) => {
-      if (body[field] !== undefined && body[field] !== null && body[field] !== "") {
+      if (body[field] !== undefined && body[field] !== null) {
         user[field] = body[field];
       }
     });
 
-    // Handle nested location update
+    // Nested location update
     if (body.location) {
-      // Only update provided keys in location
-      const locFields = ["type", "coordinates", "city", "state", "country"];
+      const locFields = ["type", "coordinates", "state", "district", "town"];
       locFields.forEach((key) => {
-        if (body.location[key] !== undefined && body.location[key] !== null && body.location[key] !== "") {
+        if (body.location[key] !== undefined && body.location[key] !== null) {
           user.location[key] = body.location[key];
         }
       });
     }
 
-
-    // Save user
+    // Save and return without password
     const updatedUser = await user.save();
-
-    // Return without password
     const userObj = updatedUser.toObject();
     delete userObj.password;
 
@@ -98,12 +87,10 @@ export async function PATCH(req, { params }) {
     );
   } catch (error) {
     console.error("Error updating user:", error);
-    return new Response(
-      JSON.stringify({ error: "Something went wrong" }),
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: "Something went wrong" }), { status: 500 });
   }
 }
+
 
 
 

@@ -5,6 +5,9 @@ const nextConfig = {
       buildActivity: false,
       autoPrerender: false, // disables prerender overlay
     },
+    images: {
+        domains: ["lh3.googleusercontent.com"], // add Google image domain
+      },
   };
   
   export default nextConfig;

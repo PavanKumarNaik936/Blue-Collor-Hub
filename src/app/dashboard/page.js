@@ -1,15 +1,5 @@
-"use client";
-
-import Posts from "../components/Posts";
-import Wishlist from "../components/Wishlist";
-import ChatSupport from "../components/ChatSupport";
-import Profile from "../components/Profile";
+import { redirect } from "next/navigation";
 
 export default function DashboardPage() {
-  return {
-    posts: <Posts />,
-    wishlist: <Wishlist />,
-    chat: <ChatSupport />,
-    profile: <Profile />,
-  };
+  redirect("/dashboard/posts");
 }

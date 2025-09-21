@@ -28,10 +28,19 @@ export const authOptions = {
   ],
   callbacks: {
     async session({ session, token, user }) {
-      session.user.id = user?.id || token.sub;
+      // Use token.sub (string) if user.id is undefined
+      session.user.id = user?.id ? user.id.toString() : token.sub;
       return session;
     },
+    async jwt({ token, user }) {
+      // Attach user.id to token when first signing in
+      if (user?.id) {
+        token.id = user.id.toString();
+      }
+      return token;
+    },
   },
+  
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
 };
