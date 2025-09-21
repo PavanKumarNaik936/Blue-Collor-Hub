@@ -1,21 +1,84 @@
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }, // hashed password
-    image: { type: String }, // optional profile picture
-    skills: { type: [String], default: [] },
-    location: { type: String },
-    bio: { type: String },
+    name: {
+
+      type: String,
+      required:true,
+      unique: true,
+      trim:true
+    
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowerCase:true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required:true
+     
+    },
+    phone: {
+      type: String,
+      default: null,
+    },
+    title: {
+      type: String,
+      default: null,
+    },
+    profilePic: {
+      type: String, // store image URL
+      default: null,
+    },
+    coverImage: {
+      type: String, // store image URL
+      default: null,
+    },
+    whatsappNo: {
+      type: String,
+      default: null,
+    },
+    skillCategories: {
+      type: [String], // e.g., ["Web Development", "AI"]
+      default: [],
+    },
+    skills: {
+      type: [String], // e.g., ["React", "Node.js"]
+      default: [],
+    },
+    connections: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        default: [0, 0],
+      },
+     
+      state: { type: String, default: null },
+       district: { type: String, default: null },
+        town: { type: String, default: null },
+     
+    },
   },
   { timestamps: true }
 );
 
-const User = mongoose.models.User || mongoose.model("User", UserSchema);
+// Create a geospatial index for location
+userSchema.index({ location: "2dsphere" });
+
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+
 export default User;
-
-
-
-
