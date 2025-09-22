@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUploadThing } from "@uploadthing/next"; // UploadThing client
+ import { UploadButton } from "@uploadthing/react";
 import axios from "axios";
 
 export default function ProfileEditForm({ user, onSave, onCancel }) {
@@ -21,33 +21,11 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
 
   const [profilePreview, setProfilePreview] = useState(user.profilePic || "");
   const [coverPreview, setCoverPreview] = useState(user.coverImage || "");
-  const [profileFile, setProfileFile] = useState(null);
-  const [coverFile, setCoverFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // UploadThing hooks
-  const { startUpload } = useUploadThing("imageAndVideo"); // must match backend router
-
-  // Handle input changes
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-
-    // File handling
-    if (files && files[0]) {
-      const file = files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (name === "profilePic") {
-          setProfilePreview(reader.result);
-          setProfileFile(file);
-        }
-        if (name === "coverImage") {
-          setCoverPreview(reader.result);
-          setCoverFile(file);
-        }
-      };
-      reader.readAsDataURL(file);
-    } else if (name.startsWith("location.")) {
+    const { name, value } = e.target;
+    if (name.startsWith("location.")) {
       const key = name.split(".")[1];
       setFormData((prev) => ({
         ...prev,
@@ -62,40 +40,30 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
     try {
       setSaving(true);
 
-      // Upload files to UploadThing
-      let profilePicUrl = profilePreview;
-      let coverImageUrl = coverPreview;
-
-      if (profileFile) {
-        const res = await startUpload([profileFile]);
-        if (res && res[0]) profilePicUrl = res[0].fileUrl;
-      }
-      if (coverFile) {
-        const res = await startUpload([coverFile]);
-        if (res && res[0]) coverImageUrl = res[0].fileUrl;
-      }
-
-      // Build JSON payload
       const payload = {
         name: formData.name,
         title: formData.title,
         phone: formData.phone,
         whatsappNo: formData.whatsappNo,
-        skills: formData.skills,
-        skillCategories: formData.skillCategories,
+        skills: formData.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        skillCategories: formData.skillCategories
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
         location: formData.location,
-        profilePic: profilePicUrl,
-        coverImage: coverImageUrl,
+        profilePic: profilePreview,
+        coverImage: coverPreview,
       };
 
-      // Send JSON to backend
-      console.log(payload);
-    //   const { data } = await axios.patch(`/api/user/${user._id}`, payload);
+      const { data } = await axios.patch(`/api/user/${user._id}`, payload);
 
-      onSave(data.user);
+      onSave(data.user || payload);
     } catch (err) {
-      console.error(err);
-      alert("Error updating user");
+      console.error("Profile update error:", err);
+      alert("Error updating profile. Try again!");
     } finally {
       setSaving(false);
     }
@@ -115,13 +83,16 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
             className="w-24 h-24 rounded-full object-cover border mb-2"
           />
         )}
-        <input
-          type="file"
-          name="profilePic"
-          accept="image/*,video/*"
-          onChange={handleChange}
-          className="text-sm text-gray-500"
-        />
+        <UploadButton
+          endpoint="imageUploader" // match your server router
+          onClientUploadComplete={(res) => {
+            if (res && res[0]) setProfilePreview(res[0].fileUrl);
+          }}
+        >
+          <button className="px-2 py-1 bg-blue-500 text-white rounded">
+            Upload Profile Image
+          </button>
+        </UploadButton>
       </div>
 
       {/* Cover Image */}
@@ -134,13 +105,16 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
             className="w-full h-32 rounded-lg object-cover border mb-2"
           />
         )}
-        <input
-          type="file"
-          name="coverImage"
-          accept="image/*,video/*"
-          onChange={handleChange}
-          className="text-sm text-gray-500"
-        />
+        <UploadButton
+          endpoint="imageUploader"
+          onClientUploadComplete={(res) => {
+            if (res && res[0]) setCoverPreview(res[0].fileUrl);
+          }}
+        >
+          <button className="px-2 py-1 bg-blue-500 text-white rounded">
+            Upload Cover Image
+          </button>
+        </UploadButton>
       </div>
 
       {/* Basic Info */}
