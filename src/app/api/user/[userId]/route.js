@@ -8,7 +8,7 @@ export async function GET(req, { params }) {
   await connect();
 
   try {
-    const { userId } =await params; // coming from route: /api/user/[userId]
+    const { userId } =params; // coming from route: /api/user/[userId]
 console.log(userId)
     // Find user by ID and exclude password
     const user = await User.findById(userId).select("-password");
