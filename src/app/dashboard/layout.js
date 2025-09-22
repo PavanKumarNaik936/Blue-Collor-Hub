@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }) {
             </select>
 
             {/* Create Button */}
-            <button className="flex items-center gap-2 px-6 py-2 rounded-full bg-black text-white font-semibold border border-black hover:bg-transparent hover:text-black transition cursor-pointer">
+            <button onClick={()=>router.push('/dashboard/createpost')} className="flex items-center gap-2 px-6 py-2 rounded-full bg-black text-white font-semibold border border-black hover:bg-transparent hover:text-black transition cursor-pointer">
               <FaPlus /> Create
             </button>
 

@@ -1,39 +1,62 @@
 import mongoose from "mongoose";
 
+// Sub-schema for ratings
+const ratingSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    value: {
+      type: Number, // rating value (1 to 5)
+      required: true,
+      min: 1,
+      max: 5
+    },
+    feedback: {
+      type: String, // optional feedback
+      default: ""
+    }
+  },
+  { timestamps: true }
+);
+
+// Main Post schema
 const postSchema = new mongoose.Schema(
   {
     title: {
       type: String,
       required: true,
-      trim: true,
+      trim: true
     },
     description: {
       type: String,
-      required: true,
+      required: true
     },
     images: [
       {
-        type: String, // store image URLs or paths
-      },
+        type: String // store image URLs or paths
+      }
     ],
     video: {
-      type: String, // store video URL/path
+      type: String // store video URL/path
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // reference to User schema
-      required: true,
+      ref: "User",
+      required: true
     },
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Like", // reference Like schema
-      },
+        ref: "Like"
+      }
     ],
     comments: [
       {
-        type: String, // simple string comments
-      },
+        type: String // simple string comments
+      }
     ],
     ratings: [ratingSchema], // embedded ratings
     averageRating: {
