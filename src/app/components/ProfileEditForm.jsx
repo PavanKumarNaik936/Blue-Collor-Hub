@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { UploadButton } from "@uploadthing/react";
-import "@uploadthing/react/styles.css";
-import Image from "next/image";
+ import { UploadButton } from "@uploadthing/react";
 import axios from "axios";
+
 export default function ProfileEditForm({ user, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     name: user.name || "",
@@ -22,8 +21,6 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
 
   const [profilePreview, setProfilePreview] = useState(user.profilePic || "");
   const [coverPreview, setCoverPreview] = useState(user.coverImage || "");
-  const [profileUrl, setProfileUrl] = useState(user.profilePic || "");
-  const [coverUrl, setCoverUrl] = useState(user.coverImage || "");
   const [saving, setSaving] = useState(false);
 
   const handleChange = (e) => {
@@ -32,95 +29,95 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
       const key = name.split(".")[1];
       setFormData((prev) => ({
         ...prev,
-        location: { ...prev.location, [key]: value },
+        location: { ...prev.location, [key]: value || "" },
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value || "" }));
     }
   };
 
   const handleSave = async () => {
-    setSaving(true);
     try {
+      setSaving(true);
+
       const payload = {
-        ...formData,
-        skills: formData.skills.split(",").map((s) => s.trim()),
-        skillCategories: formData.skillCategories.split(",").map((s) => s.trim()),
-        profilePic: profileUrl,
-        coverImage: coverUrl,
+        name: formData.name,
+        title: formData.title,
+        phone: formData.phone,
+        whatsappNo: formData.whatsappNo,
+        skills: formData.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        skillCategories: formData.skillCategories
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        location: formData.location,
+        profilePic: profilePreview,
+        coverImage: coverPreview,
       };
-  
-      // Call your API here
-      const res = await axios.patch(`/api/user/${user._id}`, payload);
-  
-      alert("Profile updated successfully!");
-      console.log("Updated user:", res.data);
+
+      const { data } = await axios.patch(`/api/user/${user._id}`, payload);
+
+      onSave(data.user || payload);
     } catch (err) {
-      console.error(err);
-      alert("Error saving profile");
+      console.error("Profile update error:", err);
+      alert("Error updating profile. Try again!");
     } finally {
       setSaving(false);
     }
   };
+
   return (
     <div className="space-y-6 p-6 bg-white shadow-lg rounded-lg max-w-lg mx-auto">
       <h2 className="text-2xl font-semibold text-gray-800">Edit Profile</h2>
 
-      {/* Profile Image Upload */}
+      {/* Profile Image */}
       <div className="flex flex-col items-center gap-2">
         <label className="font-medium text-gray-700">Profile Picture</label>
-
-        <img
-          src={profilePreview || "/default-user.jpeg"}
-          alt="Profile"
-          width={96}
-          height={96}
-          className="w-24 h-24 rounded-full object-cover border mb-2"
-        />
-
+        {profilePreview && (
+          <img
+            src={profilePreview}
+            alt="Profile"
+            className="w-24 h-24 rounded-full object-cover border mb-2"
+          />
+        )}
         <UploadButton
-          endpoint="imageUploader"
+          endpoint="imageUploader" // match your server router
           onClientUploadComplete={(res) => {
-            if (res && res[0]) {
-              setProfileUrl(res[0].url);
-              setProfilePreview(res[0].url);
-              alert("Profile uploaded successfully!");
-            }
+            if (res && res[0]) setProfilePreview(res[0].fileUrl);
           }}
-          onUploadError={(err) => alert("Upload error: " + err.message)}
         >
-          {profilePreview ? "Change Profile Image" : "Upload Profile Image"}
+          <button className="px-2 py-1 bg-blue-500 text-white rounded">
+            Upload Profile Image
+          </button>
         </UploadButton>
       </div>
 
-      {/* Cover Image Upload */}
+      {/* Cover Image */}
       <div className="flex flex-col items-center gap-2">
         <label className="font-medium text-gray-700">Cover Image</label>
-
-        <img
-          src={coverPreview || "/default-cover.jpeg"}
-          alt="Cover"
-          width={400}
-          height={128}
-          className="w-full h-32 rounded-lg object-cover border mb-2"
-        />
-
+        {coverPreview && (
+          <img
+            src={coverPreview}
+            alt="Cover"
+            className="w-full h-32 rounded-lg object-cover border mb-2"
+          />
+        )}
         <UploadButton
           endpoint="imageUploader"
           onClientUploadComplete={(res) => {
-            if (res && res[0]) {
-              setCoverUrl(res[0].url);
-              setCoverPreview(res[0].url);
-              alert("Cover uploaded successfully!");
-            }
+            if (res && res[0]) setCoverPreview(res[0].fileUrl);
           }}
-          onUploadError={(err) => alert("Upload error: " + err.message)}
         >
-          {coverPreview ? "Change Cover Image" : "Upload Cover Image"}
+          <button className="px-2 py-1 bg-blue-500 text-white rounded">
+            Upload Cover Image
+          </button>
         </UploadButton>
       </div>
 
-      {/* Other fields */}
+      {/* Basic Info */}
       <div className="grid grid-cols-1 gap-3">
         <input
           type="text"
@@ -154,6 +151,10 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded focus:ring focus:ring-indigo-300"
         />
+      </div>
+
+      {/* Skills & Categories */}
+      <div className="grid grid-cols-1 gap-3">
         <input
           type="text"
           name="skills"
@@ -170,6 +171,10 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded focus:ring focus:ring-indigo-300"
         />
+      </div>
+
+      {/* Location */}
+      <div className="grid grid-cols-1 gap-3">
         <input
           type="text"
           name="location.state"
