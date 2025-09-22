@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useUploadThing } from "@uploadthing/next"; // UploadThing client
+import { UploadButton } from "@uploadthing/react";
+import "@uploadthing/react/styles.css";
+import Image from "next/image";
 import axios from "axios";
-
 export default function ProfileEditForm({ user, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     name: user.name || "",
@@ -21,129 +22,105 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
 
   const [profilePreview, setProfilePreview] = useState(user.profilePic || "");
   const [coverPreview, setCoverPreview] = useState(user.coverImage || "");
-  const [profileFile, setProfileFile] = useState(null);
-  const [coverFile, setCoverFile] = useState(null);
+  const [profileUrl, setProfileUrl] = useState(user.profilePic || "");
+  const [coverUrl, setCoverUrl] = useState(user.coverImage || "");
   const [saving, setSaving] = useState(false);
 
-  // UploadThing hooks
-  const { startUpload } = useUploadThing("imageAndVideo"); // must match backend router
-
-  // Handle input changes
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-
-    // File handling
-    if (files && files[0]) {
-      const file = files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (name === "profilePic") {
-          setProfilePreview(reader.result);
-          setProfileFile(file);
-        }
-        if (name === "coverImage") {
-          setCoverPreview(reader.result);
-          setCoverFile(file);
-        }
-      };
-      reader.readAsDataURL(file);
-    } else if (name.startsWith("location.")) {
+    const { name, value } = e.target;
+    if (name.startsWith("location.")) {
       const key = name.split(".")[1];
       setFormData((prev) => ({
         ...prev,
-        location: { ...prev.location, [key]: value || "" },
+        location: { ...prev.location, [key]: value },
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value || "" }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSave = async () => {
+    setSaving(true);
     try {
-      setSaving(true);
-
-      // Upload files to UploadThing
-      let profilePicUrl = profilePreview;
-      let coverImageUrl = coverPreview;
-
-      if (profileFile) {
-        const res = await startUpload([profileFile]);
-        if (res && res[0]) profilePicUrl = res[0].fileUrl;
-      }
-      if (coverFile) {
-        const res = await startUpload([coverFile]);
-        if (res && res[0]) coverImageUrl = res[0].fileUrl;
-      }
-
-      // Build JSON payload
       const payload = {
-        name: formData.name,
-        title: formData.title,
-        phone: formData.phone,
-        whatsappNo: formData.whatsappNo,
-        skills: formData.skills,
-        skillCategories: formData.skillCategories,
-        location: formData.location,
-        profilePic: profilePicUrl,
-        coverImage: coverImageUrl,
+        ...formData,
+        skills: formData.skills.split(",").map((s) => s.trim()),
+        skillCategories: formData.skillCategories.split(",").map((s) => s.trim()),
+        profilePic: profileUrl,
+        coverImage: coverUrl,
       };
-
-      // Send JSON to backend
-      console.log(payload);
-    //   const { data } = await axios.patch(`/api/user/${user._id}`, payload);
-
-      onSave(data.user);
+  
+      // Call your API here
+      const res = await axios.patch(`/api/user/${user._id}`, payload);
+  
+      alert("Profile updated successfully!");
+      console.log("Updated user:", res.data);
     } catch (err) {
       console.error(err);
-      alert("Error updating user");
+      alert("Error saving profile");
     } finally {
       setSaving(false);
     }
   };
-
   return (
     <div className="space-y-6 p-6 bg-white shadow-lg rounded-lg max-w-lg mx-auto">
       <h2 className="text-2xl font-semibold text-gray-800">Edit Profile</h2>
 
-      {/* Profile Image */}
+      {/* Profile Image Upload */}
       <div className="flex flex-col items-center gap-2">
         <label className="font-medium text-gray-700">Profile Picture</label>
-        {profilePreview && (
-          <img
-            src={profilePreview}
-            alt="Profile"
-            className="w-24 h-24 rounded-full object-cover border mb-2"
-          />
-        )}
-        <input
-          type="file"
-          name="profilePic"
-          accept="image/*,video/*"
-          onChange={handleChange}
-          className="text-sm text-gray-500"
+
+        <img
+          src={profilePreview || "/default-user.jpeg"}
+          alt="Profile"
+          width={96}
+          height={96}
+          className="w-24 h-24 rounded-full object-cover border mb-2"
         />
+
+        <UploadButton
+          endpoint="imageUploader"
+          onClientUploadComplete={(res) => {
+            if (res && res[0]) {
+              setProfileUrl(res[0].url);
+              setProfilePreview(res[0].url);
+              alert("Profile uploaded successfully!");
+            }
+          }}
+          onUploadError={(err) => alert("Upload error: " + err.message)}
+        >
+          {profilePreview ? "Change Profile Image" : "Upload Profile Image"}
+        </UploadButton>
       </div>
 
-      {/* Cover Image */}
+      {/* Cover Image Upload */}
       <div className="flex flex-col items-center gap-2">
         <label className="font-medium text-gray-700">Cover Image</label>
-        {coverPreview && (
-          <img
-            src={coverPreview}
-            alt="Cover"
-            className="w-full h-32 rounded-lg object-cover border mb-2"
-          />
-        )}
-        <input
-          type="file"
-          name="coverImage"
-          accept="image/*,video/*"
-          onChange={handleChange}
-          className="text-sm text-gray-500"
+
+        <img
+          src={coverPreview || "/default-cover.jpeg"}
+          alt="Cover"
+          width={400}
+          height={128}
+          className="w-full h-32 rounded-lg object-cover border mb-2"
         />
+
+        <UploadButton
+          endpoint="imageUploader"
+          onClientUploadComplete={(res) => {
+            if (res && res[0]) {
+              setCoverUrl(res[0].url);
+              setCoverPreview(res[0].url);
+              alert("Cover uploaded successfully!");
+            }
+          }}
+          onUploadError={(err) => alert("Upload error: " + err.message)}
+        >
+          {coverPreview ? "Change Cover Image" : "Upload Cover Image"}
+        </UploadButton>
       </div>
 
-      {/* Basic Info */}
+      {/* Other fields */}
       <div className="grid grid-cols-1 gap-3">
         <input
           type="text"
@@ -177,10 +154,6 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded focus:ring focus:ring-indigo-300"
         />
-      </div>
-
-      {/* Skills & Categories */}
-      <div className="grid grid-cols-1 gap-3">
         <input
           type="text"
           name="skills"
@@ -197,10 +170,6 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
           onChange={handleChange}
           className="w-full border px-3 py-2 rounded focus:ring focus:ring-indigo-300"
         />
-      </div>
-
-      {/* Location */}
-      <div className="grid grid-cols-1 gap-3">
         <input
           type="text"
           name="location.state"

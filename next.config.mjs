@@ -3,11 +3,11 @@ const nextConfig = {
     reactStrictMode: true,
     devIndicators: {
       buildActivity: false,
-      autoPrerender: false, // disables prerender overlay
+      autoPrerender: false,
     },
     images: {
-        domains: ["lh3.googleusercontent.com"], // add Google image domain
-      },
+      domains: ["lh3.googleusercontent.com", "utfs.io"], // added utfs.io
+    },
   };
   
   export default nextConfig;

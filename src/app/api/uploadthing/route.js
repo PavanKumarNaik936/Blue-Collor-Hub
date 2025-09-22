@@ -1,16 +1,6 @@
-// app/api/uploadthing/route.js (Next.js App Router)
-import { createUploadthing } from "uploadthing/next";
+import { createRouteHandler } from "uploadthing/next";
+import { ourFileRouter } from "./core";
 
-const f = createUploadthing();
-
-export const ourFileRouter = {
-  imageAndVideo: f
-    .fileTypes(["image", "video"]) // allow images and videos
-    .maxSize("64MB") // max file size
-    .onUploadComplete(async ({ metadata, file }) => {
-      console.log("Upload complete for file:", file.url);
-      // TODO: save file.url to your database
-    }),
-};
-
-export const { middleware, config } = f;
+export const { GET, POST } = createRouteHandler({
+  router: ourFileRouter,
+});
