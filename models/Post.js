@@ -35,6 +35,11 @@ const postSchema = new mongoose.Schema(
         type: String, // simple string comments
       },
     ],
+    ratings: [ratingSchema], // embedded ratings
+    averageRating: {
+      type: Number,
+      default: 0
+    }
   },
   { timestamps: true }
 );
