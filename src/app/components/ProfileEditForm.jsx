@@ -3,6 +3,8 @@
 import { useState } from "react";
  import { UploadButton } from "@uploadthing/react";
 import axios from "axios";
+import { toast } from "sonner";
+
 
 export default function ProfileEditForm({ user, onSave, onCancel }) {
   const [formData, setFormData] = useState({
@@ -37,9 +39,10 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
   };
 
   const handleSave = async () => {
+    console.log("handlesave is called");
     try {
       setSaving(true);
-
+  
       const payload = {
         name: formData.name,
         title: formData.title,
@@ -57,17 +60,22 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
         profilePic: profilePreview,
         coverImage: coverPreview,
       };
-
+      console.log("updating user details");
       const { data } = await axios.patch(`/api/user/${user._id}`, payload);
-
+  
       onSave(data.user || payload);
+  
+      // ✅ Sonner success notification
+      toast.success("Profile updated successfully!");
     } catch (err) {
       console.error("Profile update error:", err);
-      alert("Error updating profile. Try again!");
+      // ❌ Sonner error notification
+      toast.error("Error updating profile. Try again!");
     } finally {
       setSaving(false);
     }
   };
+  
 
   return (
     <div className="space-y-6 p-6 bg-white shadow-lg rounded-lg max-w-lg mx-auto">
@@ -204,13 +212,15 @@ export default function ProfileEditForm({ user, onSave, onCancel }) {
       {/* Buttons */}
       <div className="flex gap-3 mt-4">
         <button
-          onClick={handleSave}
+         type="button"
+          onClick={()=>console.log("handleSave button clicked")}
           disabled={saving}
           className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
         >
           {saving ? "Saving..." : "Save"}
         </button>
         <button
+          type="button"
           onClick={onCancel}
           className="flex-1 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
         >

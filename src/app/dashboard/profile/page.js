@@ -5,38 +5,39 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { FiMapPin } from "react-icons/fi";
 import EditProfileModal from "@/app/components/EditProfileModal";
-import connect from "../../../../lib/mongodb";
+
 export default function ProfilePage() {
   const { data: session } = useSession();
-  // console.log(session);
   const [userDetails, setUserDetails] = useState(null);
   const [postsData, setPostsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedTab, setSelectedTab] = useState("posts"); // posts or media
-  const [modalImage, setModalImage] = useState(null); // For large image view
-  
+  const [selectedTab, setSelectedTab] = useState("posts"); // "posts" or "media"
+  const [modalImage, setModalImage] = useState(null);
 
   useEffect(() => {
     if (!session) return;
 
     const fetchData = async () => {
       try {
-        const userId = session?.user.id;
-        console.log(userId);
-        if(!userId)
-          return;
-        // Fetch user profile
-        // console.log(userId);
-        // await connect();
+        const userId = session?.user?.id;
+        if (!userId) return;
+
+        // ✅ Fetch user profile
         const { data: userData } = await axios.get(`/api/user/${userId}`);
+        // console.log(userData);
         setUserDetails(userData);
 
-        // Fetch user posts
-        // const { data: posts } = await axios.get(`/api/user/${userId}/posts`);
-        setPostsData(posts);
+        // ✅ Fetch user posts (uncomment when API is ready)
+        try {
+          // const { data: posts } = await axios.get(`/api/user/${userId}/posts`);
+          setPostsData(posts || []);
+        } catch (err) {
+          console.warn("No posts found:", err);
+          setPostsData([]);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching profile:", err);
       } finally {
         setLoading(false);
       }
@@ -102,32 +103,37 @@ export default function ProfilePage() {
 
               {/* Bio */}
               <p className="text-gray-600 mt-1 max-w-[calc(100%-5rem)] break-words">
-                {isValid(userDetails.bio) ? userDetails.bio : "No bio provided"}
+                {isValid(userDetails.title) ? userDetails.title : "No bio provided"}
               </p>
 
-              {/* Mobile Number */}
+              {/* Mobile */}
               <p className="text-gray-700 mt-2">
                 <span className="font-semibold">Mobile: </span>
-                {isValid(userDetails.mobile) ? userDetails.mobile : "N/A"}
+                {isValid(userDetails.phone) ? userDetails.phone : "N/A"}
               </p>
 
               {/* Skill Category */}
-              <p className="text-gray-700 mt-1">
-                <span className="font-semibold">Skill Category: </span>
-                {isValid(userDetails.skillCategory) ? userDetails.skillCategory : "N/A"}
-              </p>
+            <p className="text-gray-700 mt-1">
+              <span className="font-semibold">Skill Category: </span>
+              {Array.isArray(userDetails.skillCategories) && userDetails.skillCategories.length > 0
+                ? userDetails.skillCategories.join(", ")
+                : "N/A"}
+            </p>
 
-              {/* Skill */}
-              <p className="text-gray-700 mt-1">
-                <span className="font-semibold">Skill: </span>
-                {isValid(userDetails.skill) ? userDetails.skill : "N/A"}
-              </p>
+            {/* Skill */}
+            <p className="text-gray-700 mt-1">
+              <span className="font-semibold">Skill: </span>
+              {Array.isArray(userDetails.skills) && userDetails.skills.length > 0
+                ? userDetails.skills.join(", ")
+                : "N/A"}
+            </p>
+
 
               {/* Location */}
               <p className="text-gray-500 mt-2 flex items-center gap-1">
                 <FiMapPin className="text-gray-500" />
-                {isValid(userDetails.state) && isValid(userDetails.city)
-                  ? `${userDetails.state}, ${userDetails.city}`
+                {isValid(userDetails.location.state) && isValid(userDetails.location.town)
+                  ? `${userDetails.location.state}, ${userDetails.location.town}`
                   : "Unknown location"}
               </p>
 
@@ -177,10 +183,12 @@ export default function ProfilePage() {
         </div>
 
         {/* Posts / Media Content */}
-        {selectedTab === "media" ? (
+        {displayedPosts.length === 0 ? (
+          <p className="mt-4 text-gray-500 text-center">No posts available</p>
+        ) : selectedTab === "media" ? (
           <div className="mt-4 grid grid-cols-3 gap-2">
             {displayedPosts.map((post) => (
-              <div key={post._id} className="cursor-pointer">
+              <div key={post._id || post.content} className="cursor-pointer">
                 <img
                   src={post.content}
                   alt="Media"
@@ -194,20 +202,21 @@ export default function ProfilePage() {
           <div className="mt-4 flex flex-col space-y-4">
             {displayedPosts.map((post) =>
               post.type === "text" ? (
-                <div key={post._id} className="p-4 border rounded bg-gray-50 break-words">
+                <div
+                  key={post._id || post.content}
+                  className="p-4 border rounded bg-gray-50 break-words"
+                >
                   {post.content}
                 </div>
               ) : (
-                <div key={post._id} className="flex flex-col cursor-pointer">
+                <div key={post._id || post.content} className="flex flex-col cursor-pointer">
                   <img
                     src={post.content}
                     alt="Post"
                     className="w-full h-64 object-cover rounded"
                     onClick={() => setModalImage(post.content)}
                   />
-                  {post.text && (
-                    <p className="mt-1 text-gray-700 text-sm">{post.text}</p>
-                  )}
+                  {post.text && <p className="mt-1 text-gray-700 text-sm">{post.text}</p>}
                 </div>
               )
             )}
