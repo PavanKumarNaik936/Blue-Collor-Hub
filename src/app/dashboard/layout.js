@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }) {
   const { data: session, status } = useSession();
   const user = session?.user; // { name, email, image }
   const router = useRouter();
-  console.log(user?.image);
+  // console.log(user?.image);
   const pathname = usePathname();
   const activeSection = pathname?.split("/")[2] || "posts";
   const [showAllCategories, setShowAllCategories] = useState(false);
@@ -200,9 +200,18 @@ export default function DashboardLayout({ children }) {
             </select>
 
             {/* Create Button */}
-            <button onClick={()=>router.push('/dashboard/createpost')} className="flex items-center gap-2 px-6 py-2 rounded-full bg-black text-white font-semibold border border-black hover:bg-transparent hover:text-black transition cursor-pointer">
-              <FaPlus /> Create
-            </button>
+            <button
+  onClick={() => router.push("/dashboard/createpost")}
+  className="group flex items-center gap-2 px-6 py-2 rounded-full border border-black
+             bg-black text-white"
+>
+  <FaPlus className="transition-colors duration-300 text-white group-hover:text-black" />
+  <span className="transition-colors duration-300 text-white group-hover:text-black">Create</span>
+</button>
+
+
+
+
 
                     {/* Profile Circle */}
         <div className="relative w-10 h-10 rounded-full overflow-hidden cursor-pointer">

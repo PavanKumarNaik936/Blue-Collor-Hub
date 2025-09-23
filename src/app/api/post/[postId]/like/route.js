@@ -1,6 +1,5 @@
 import connect from "../../../../../../lib/mongodb";
 import Post from "../../../../../../models/Post";
-import Like from "../../../../../../models/Like";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../auth/[...nextauth]/route";
 
@@ -18,10 +17,10 @@ export async function POST(req, { params }) {
     }
 
     const userId = session.user.id;
-    const { postId } = params;
+    const { postId } = await params;
 
-    // Check if the post exists
-    const post = await Post.findById(postId).populate("likes");
+    // Find post
+    const post = await Post.findById(postId);
     if (!post) {
       return new Response(
         JSON.stringify({ success: false, message: "Post not found" }),
@@ -29,28 +28,22 @@ export async function POST(req, { params }) {
       );
     }
 
-    // Check if the like already exists
-    const existingLike = await Like.findOne({ postId, userId });
-
     let message = "";
 
-    if (existingLike) {
-      // Unlike: remove Like document
-      await existingLike.deleteOne();
-      // Remove from post.likes array
-      post.likes = post.likes.filter(like => like._id.toString() !== existingLike._id.toString());
+    if (post.likes.includes(userId)) {
+      // Unlike
+      post.likes = post.likes.filter(id => id.toString() !== userId);
       message = "Post unliked";
     } else {
-      // Like: create new Like document
-      const newLike = await Like.create({ postId, userId });
-      post.likes.push(newLike._id);
+      // Like
+      post.likes.push(userId);
       message = "Post liked";
     }
 
     await post.save();
 
     return new Response(
-      JSON.stringify({ success: true, message, likes: post.likes }),
+      JSON.stringify({ success: true, message, likesCount: post.likes.length }),
       { status: 200 }
     );
 

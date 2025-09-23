@@ -7,7 +7,7 @@ export async function POST(req, { params }) {
   await connect();
 
   try {
-    // Get logged-in user session
+    // ✅ Get logged-in user session
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user?.id) {
@@ -17,7 +17,7 @@ export async function POST(req, { params }) {
       );
     }
 
-    const { postId } = params;
+    const { postId } = await params;
     const { comment } = await req.json();
 
     if (!comment || comment.trim() === "") {
@@ -27,7 +27,7 @@ export async function POST(req, { params }) {
       );
     }
 
-    // Find post
+    // ✅ Find post
     const post = await Post.findById(postId);
     if (!post) {
       return new Response(
@@ -36,12 +36,20 @@ export async function POST(req, { params }) {
       );
     }
 
-    // Add comment (string only)
-    post.comments.push(comment);
+    // ✅ Push full comment object
+    post.comments.push({
+      userId: session.user.id,
+      text: comment,
+    });
+
     await post.save();
 
     return new Response(
-      JSON.stringify({ success: true, message: "Comment added", comments: post.comments }),
+      JSON.stringify({
+        success: true,
+        message: "Comment added",
+        comments: post.comments,
+      }),
       { status: 201 }
     );
 

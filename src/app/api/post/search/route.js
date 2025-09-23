@@ -12,31 +12,26 @@ export async function GET(req) {
     const skillCategory = searchParams.get("skillCategory");
     const subSkill = searchParams.get("subSkill");
 
-    // Step 1: Build filter for Users
-    const userFilter = { $or: [] };
-    if (location) userFilter.$or.push({ "location.district": location });
-    if (skillCategory) userFilter.$or.push({ skillCategories: skillCategory });
-    if (subSkill) userFilter.$or.push({ skills: subSkill });
+    // Build user filter dynamically
+    const userFilter = {};
+    const userConditions = [];
+    if (location) userConditions.push({ "location.district": location });
+    if (skillCategory) userConditions.push({ skillCategories: skillCategory });
+    if (subSkill) userConditions.push({ skills: subSkill });
+    if (userConditions.length > 0) userFilter.$or = userConditions;
 
-    // Step 2: Find users matching the filter
+    // Find matching users
     const matchingUsers = await User.find(userFilter).select("_id");
     const userIds = matchingUsers.map(u => u._id);
 
-    // Step 3: Build filter for Posts
-    const postFilter = { $or: [] };
-    if (skillCategory) postFilter.$or.push({ skillCategories: skillCategory });
-    if (subSkill) postFilter.$or.push({ skills: subSkill });
-    if (userIds.length > 0) postFilter.$or.push({ userId: { $in: userIds } });
+    // Build post filter
+    const postFilter = {};
+    if (userIds.length > 0) postFilter.userId = { $in: userIds };
 
-    // Step 4: If no filters are provided, return all posts
-    const hasFilters = location || skillCategory || subSkill;
-    const posts = hasFilters
-      ? await Post.find(postFilter)
-          .sort({ createdAt: -1 })
-          .populate("userId", "name location skillCategories skills")
-      : await Post.find()
-          .sort({ createdAt: -1 })
-          .populate("userId", "name location skillCategories skills");
+    // Fetch posts
+    const posts = await Post.find(postFilter)
+      .sort({ createdAt: -1 })
+      .populate("userId", "name location skillCategories skills");
 
     return new Response(JSON.stringify({ success: true, posts }), { status: 200 });
 

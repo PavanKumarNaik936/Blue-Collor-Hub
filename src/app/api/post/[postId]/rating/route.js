@@ -17,17 +17,19 @@ export async function POST(req, { params }) {
     }
 
     const userId = session.user.id;
-    const { postId } = params;
-    const { value, feedback } = await req.json();
+    const { postId } = await params;
+    let { value, feedback } = await req.json();
 
-    if (!value || value < 1 || value > 5) {
+    if (typeof value !== "number" || value < 1 || value > 5) {
       return new Response(
-        JSON.stringify({ success: false, message: "Rating must be between 1 and 5" }),
+        JSON.stringify({ success: false, message: "Rating must be a number between 1 and 5" }),
         { status: 400 }
       );
     }
 
-    // Find the post
+    feedback = feedback || "";
+
+    // Find post
     const post = await Post.findById(postId);
     if (!post) {
       return new Response(
@@ -42,19 +44,16 @@ export async function POST(req, { params }) {
     if (existingIndex !== -1) {
       // Update existing rating
       post.ratings[existingIndex].value = value;
-      post.ratings[existingIndex].feedback = feedback || "";
+      post.ratings[existingIndex].feedback = feedback;
     } else {
       // Add new rating
-      post.ratings.push({
-        userId,
-        value,
-        feedback: feedback || ""
-      });
+      post.ratings.push({ userId, value, feedback });
     }
 
     // Recalculate average rating
-    post.averageRating =
-      post.ratings.reduce((sum, r) => sum + r.value, 0) / post.ratings.length;
+    post.averageRating = parseFloat(
+      (post.ratings.reduce((sum, r) => sum + r.value, 0) / post.ratings.length).toFixed(1)
+    );
 
     await post.save();
 
