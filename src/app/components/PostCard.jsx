@@ -1,14 +1,15 @@
 "use client";
-
+import { toast } from "react-hot-toast";
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { 
   FaHeart, FaRegHeart, FaComment, FaStar, FaPaperPlane, 
-  FaChevronLeft, FaChevronRight, FaTimes 
+  FaChevronLeft, FaChevronRight, FaTimes, 
+  FaBookmark, FaRegBookmark
 } from "react-icons/fa";
 
-export default function PostCard({ post }) {
+export default function PostCard({ post,onToggle}) {
   const { data: session } = useSession();
   const currentUserId = session?.user?.id;
 
@@ -16,8 +17,9 @@ export default function PostCard({ post }) {
   const [likesCount, setLikesCount] = useState(post.likes?.length || 0);
   const [showComments, setShowComments] = useState("collapsed"); // "collapsed" | "expanded"
   const [showRatings, setShowRatings] = useState(false);
-  const [comments, setComments] = useState([...post.comments] || []);
-  const [feedbacks, setFeedbacks] = useState([...post.ratings] || []);
+  const [comments, setComments] = useState(Array.isArray(post.comments) ? [...post.comments] : []);
+  const [feedbacks, setFeedbacks] = useState(Array.isArray(post.ratings) ? [...post.ratings] : []);
+
   const [newComment, setNewComment] = useState("");
   const [newFeedback, setNewFeedback] = useState("");
   const [newRating, setNewRating] = useState(0);
@@ -26,9 +28,59 @@ export default function PostCard({ post }) {
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const commentsRef = useRef(null);
   const ratingsRef = useRef(null);
+  //check ispresent in wishlist
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const checkWishlist = async () => {
+      try {
+        const { data } = await axios.get(`/api/post/${post._id}/wishlist`, {
+          userId: currentUserId, // send userId in body
+        });
+
+        setSaved(data.inWishlist);
+      } catch (err) {
+        console.error("Error checking wishlist:", err);
+      }
+    };
+
+    checkWishlist();
+  }, [currentUserId, post._id]);
+
+  //toggle wishlist
+  const handleSave = async () => {
+    if (!currentUserId) {
+      toast.error("Please login to save posts.");
+      return;
+    }
+
+    // Optimistically toggle saved state
+    setSaved(!saved);
+    toast(`Post ${!saved ? "added to" : "removed from"} wishlist`);
+
+    try {
+      setSaving(true);
+
+      // Send request, backend will confirm
+      await axios.post(`/api/post/${post._id}/wishlist`, {});
+      if (onToggle) onToggle();
+
+      // Optionally: confirm success with success toast
+      toast.success(`Wishlist updated successfully`);
+    } catch (err) {
+      // Revert UI if API fails
+      setSaved(saved);
+      toast.error("Something went wrong while updating wishlist");
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Initialize liked state
   useEffect(() => {
@@ -132,27 +184,50 @@ useEffect(() => {
   const nextImage = () => setModalImageIndex((prev) => (prev === post.images.length - 1 ? 0 : prev + 1));
 
   return (
-    <div className="max-w-2xl mx-auto my-6 border shadow-md bg-white rounded-lg overflow-hidden">
-
+     <div className="max-w-2xl mx-auto my-6 border shadow-md bg-white rounded-lg overflow-hidden">
       {/* Post Creator */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <img src={post.userId?.profilePic || "https://i.pravatar.cc/150?img=12"} alt="User Avatar" className="w-12 h-12 rounded-full object-cover" />
+          <img
+            src={
+              post.userId?.profilePic || "https://i.pravatar.cc/150?img=12"
+            }
+            alt="User Avatar"
+            className="w-12 h-12 rounded-full object-cover"
+          />
           <div>
             <p className="font-semibold">{post.userId?.name || "User"}</p>
             <p className="text-gray-500 text-sm">{post.userId?.title || ""}</p>
           </div>
         </div>
-        <button className="px-4 py-1 text-black font-semibold border border-black rounded-md hover:bg-black hover:text-white transition">
-          Connect
-        </button>
+
+        <div className="flex items-center gap-4">
+          {/* ✅ Save button */}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="text-xl text-black hover:text-gray-600 transition"
+          >
+            {saved ? <FaBookmark /> : <FaRegBookmark />}
+          </button>
+
+          <button className="px-4 py-1 text-black font-semibold border border-black rounded-md hover:bg-black hover:text-white transition">
+            Connect
+          </button>
+        </div>
       </div>
 
-      {/* Post Title & Description */}
+      {/* Title & Description */}
       <div className="p-4 border-b border-gray-200">
         <h3 className="font-bold text-lg mb-2">{post.title}</h3>
-        <p className={`text-gray-700 ${!showFullDesc ? "line-clamp-3" : ""}`}>{post.description}</p>
-        {post.description.length > 150 && (
+        <p
+          className={`text-gray-700 ${
+            !showFullDesc ? "line-clamp-3" : ""
+          }`}
+        >
+          {post.description}
+        </p>
+        {post.description?.length > 150 && (
           <button
             className="text-blue-500 mt-1 font-semibold"
             onClick={() => setShowFullDesc(!showFullDesc)}
@@ -162,27 +237,38 @@ useEffect(() => {
         )}
       </div>
 
-      {/* Post Media */}
+      {/* Images */}
       {post.images && post.images.length > 0 && (
-        <div className="relative w-full aspect-[16/9] bg-gray-200 cursor-pointer" onClick={() => openModal(currentImage)}>
-          {imageLoading && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+        <div
+          className="relative w-full aspect-[16/9] bg-gray-200 cursor-pointer"
+          onClick={() => openModal(currentImage)}
+        >
+          {imageLoading && (
+            <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+          )}
           <img
             src={post.images[currentImage]}
             alt="Post Media"
-            className={`w-full h-full object-cover ${imageLoading ? "hidden" : "block"}`}
+            className={`w-full h-full object-cover ${
+              imageLoading ? "hidden" : "block"
+            }`}
             onLoad={() => setImageLoading(false)}
             onError={() => setImageLoading(false)}
           />
           {post.images.length > 1 && (
             <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
               {post.images.map((_, idx) => (
-                <span key={idx} className={`w-2 h-2 rounded-full ${idx === currentImage ? "bg-black" : "bg-gray-400"}`}></span>
+                <span
+                  key={idx}
+                  className={`w-2 h-2 rounded-full ${
+                    idx === currentImage ? "bg-black" : "bg-gray-400"
+                  }`}
+                ></span>
               ))}
             </div>
           )}
         </div>
       )}
-
       {/* Actions */}
       <div className="flex justify-between items-center px-4 py-4 border-t border-gray-200">
         <div className="flex gap-6">
