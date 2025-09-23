@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import PostCard from "../../components/PostCard";
 import { toast } from "sonner";
@@ -8,13 +9,20 @@ import { toast } from "sonner";
 export default function Post() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+
+  const query = searchParams.get("query") || "";
+  const location = searchParams.get("location") || "";
 
   useEffect(() => {
     const fetchPosts = async () => {
+      setLoading(true);
       try {
-        const { data } = await axios.get("/api/post");
+        const { data } = await axios.get("/api/post/search", {
+          params: { query, location },
+        });
+
         if (data.success) {
-          // Clone arrays to prevent shared references
           const clonedPosts = data.posts.map((p) => ({
             ...p,
             comments: [...(p.comments || [])],
@@ -34,22 +42,14 @@ export default function Post() {
     };
 
     fetchPosts();
-  }, []);
+  }, [query, location]);
 
   if (loading) {
-    return (
-      <div className="text-center py-10 text-gray-500">
-        Loading posts...
-      </div>
-    );
+    return <div className="text-center py-10 text-gray-500">Loading posts...</div>;
   }
 
   if (posts.length === 0) {
-    return (
-      <div className="text-center py-10 text-gray-500">
-        No posts available.
-      </div>
-    );
+    return <div className="text-center py-10 text-gray-500">No posts available.</div>;
   }
 
   return (

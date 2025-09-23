@@ -9,20 +9,30 @@ import {
   FaComments,
   FaUser,
   FaPlus,
-  FaSearch,
   FaSignOutAlt,
 } from "react-icons/fa";
 import CategoriesDropdown from "../components/CategoriesDropdown";
-import ChatSupport from "../components/ChatSupport"; // chat
+import ChatSupport from "../components/ChatSupport";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
+import SearchBar from "../components/SearchBar";
+import categoriesWithSkills from "@/data/categoriesWithSkills";
 import React from "react";
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All Categories");
   const [mounted, setMounted] = useState(false); // client-only
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const dropdownRef = useRef(null);
+
+  const { data: session } = useSession();
+  const user = session?.user;
+  const router = useRouter();
+  const pathname = usePathname();
+  const activeSection = pathname?.split("/")[2] || "posts";
+
+  const categories = ["All Categories", ...Object.keys(categoriesWithSkills)];
 
   const sidebarItems = [
     { key: "posts", label: "Posts", icon: <FaHome size={18} /> },
@@ -31,22 +41,7 @@ export default function DashboardLayout({ children }) {
     { key: "profile", label: "Profile", icon: <FaUser size={18} /> },
   ];
 
-  const { data: session } = useSession();
-  const user = session?.user;
-  const router = useRouter();
-  const pathname = usePathname();
-  const activeSection = pathname?.split("/")[2] || "posts";
-  const [showAllCategories, setShowAllCategories] = useState(false);
-
-  const categories = [
-    "All Categories",
-    "Construction & Home Services",
-    "Vehicle Services",
-    "Weaving & Textile",
-    "Food and Culinary",
-  ];
-
-  // client mount
+  // Client-only mount to avoid hydration issues
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -69,6 +64,18 @@ export default function DashboardLayout({ children }) {
       : child
   );
 
+  // Unified handler for category/skill click
+  const handleCategorySearch = (category, skill = null) => {
+    setActiveCategory(category);
+    setShowAllCategories(false);
+
+    const params = new URLSearchParams();
+    params.append("category", category);
+    if (skill) params.append("skill", skill);
+
+    router.push(`/dashboard/posts?${params.toString()}`);
+  };
+
   return (
     <div className="flex h-screen font-sans bg-gray-50">
       {/* Sidebar */}
@@ -77,14 +84,12 @@ export default function DashboardLayout({ children }) {
           sidebarOpen ? "w-64" : "w-20"
         }`}
       >
+        {/* Logo + Toggle */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className={`${sidebarOpen ? "text-2xl font-bold tracking-wide" : "hidden"}`}>
+          <div className={`${sidebarOpen ? "text-black text-2xl font-bold tracking-wide" : "hidden"}`}>
             BlueCollorHub
           </div>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded hover:bg-gray-100 transition"
-          >
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded hover:bg-gray-100 transition">
             {sidebarOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
           </button>
         </div>
@@ -121,31 +126,13 @@ export default function DashboardLayout({ children }) {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Navbar */}
         <header className="flex justify-between items-center px-6 py-3 bg-white text-black shadow-md">
           <div className="flex items-center gap-6">
             <div className="text-2xl font-bold text-black tracking-wide">Blue</div>
-
-            <select
-              className={`border border-gray-300 px-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-black transition-all duration-300 ${
-                sidebarOpen ? "w-45" : "w-64"
-              }`}
-            >
-              <option>Location 1</option>
-              <option>Location 2</option>
-              <option>Location 3</option>
-            </select>
-
-            <div className={`relative transition-all duration-300 ${sidebarOpen ? "w-84" : "w-102"}`}>
-              <input
-                type="text"
-                placeholder="Search for posts, users..."
-                className="border border-gray-300 rounded-lg pl-10 pr-3 py-2 w-full focus:outline-none focus:ring-1 focus:ring-black placeholder-gray-500 transition"
-              />
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            </div>
+            <SearchBar />
           </div>
 
           <div className="flex items-center gap-4">
@@ -191,34 +178,36 @@ export default function DashboardLayout({ children }) {
             >
               All Categories ▾
             </button>
-            {showAllCategories && <CategoriesDropdown />}
+            {showAllCategories && (
+              <CategoriesDropdown onSkillClick={handleCategorySearch} />
+            )}
           </div>
 
-          <div className="flex-1 overflow-x-auto">
-            <div className="flex gap-3">
+          {/* Scrollable Categories */}
+          <div className="w-200 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            <div className="flex gap-3 min-w-max" style={{ overflow: "hidden" }}>
               {categories
                 .filter((cat) => cat !== "All Categories")
-                .map((cat) => {
-                  const catKey = cat.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-");
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => {
-                        setShowAllCategories(false);
-                        setActiveCategory(cat);
-                        router.push(`/dashboard/${catKey}`);
-                      }}
-                      className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition ${
-                        activeCategory === cat
-                          ? "bg-black text-white hover:bg-black"
-                          : "bg-white text-black hover:bg-gray-200"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
+                .map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => handleCategorySearch(cat)}
+                    className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition ${
+                      activeCategory === cat
+                        ? "bg-black text-white hover:bg-black"
+                        : "bg-white text-black hover:bg-gray-200"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
             </div>
+
+            <style jsx>{`
+              div::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
           </div>
         </div>
 
@@ -228,7 +217,7 @@ export default function DashboardLayout({ children }) {
         </main>
       </div>
 
-      {/* Chat Support Overlay: only client & chat section */}
+      {/* Chat Support Overlay */}
       {mounted && activeSection === "chat" && (
         <ChatSupport sidebarOpen={sidebarOpen} />
       )}
