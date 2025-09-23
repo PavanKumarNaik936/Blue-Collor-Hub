@@ -34,10 +34,7 @@ const userSchema = new mongoose.Schema(
       type: String, // store image URL
       default: null,
     },
-    whatsappNo: {
-      type: String,
-      default: null,
-    },
+  
     skillCategories: {
       type: [String], // e.g., ["Web Development", "AI"]
       default: [],

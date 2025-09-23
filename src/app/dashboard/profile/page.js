@@ -25,7 +25,7 @@ export default function ProfilePage() {
 
         // ✅ Fetch user profile
         const { data: userData } = await axios.get(`/api/user/${userId}`);
-        // console.log(userData);
+        console.log(userData);
         setUserDetails(userData);
 
         // ✅ Fetch user posts (uncomment when API is ready)
@@ -132,8 +132,8 @@ export default function ProfilePage() {
               {/* Location */}
               <p className="text-gray-500 mt-2 flex items-center gap-1">
                 <FiMapPin className="text-gray-500" />
-                {isValid(userDetails.location.state) && isValid(userDetails.location.town)
-                  ? `${userDetails.location.state}, ${userDetails.location.town}`
+                {isValid(userDetails.location.state) && isValid(userDetails.location.town)||(isValid(location.district))
+                  ? `${userDetails.location.state},${userDetails.location.district}, ${userDetails.location.town}`
                   : "Unknown location"}
               </p>
 
