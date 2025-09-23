@@ -1,35 +1,45 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+import PostCard from "./PostCard";
 
 export default function Wishlist() {
-  const [items, setItems] = useState([
-    { id: 1, name: "Wishlist Item 1" },
-    { id: 2, name: "Wishlist Item 2" },
-  ]);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const removeItem = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const { data } = await axios.get("/api/user/wishlist");
+
+        // Filter out null posts in case populate failed or post deleted
+        const validPosts = Array.isArray(data) ? data.filter(Boolean) : [];
+        setPosts(validPosts);
+      } catch (err) {
+        console.error("Failed to fetch wishlist:", err);
+        toast.error("Failed to load wishlist");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWishlist();
+  }, [refreshKey]);
+  const handleToggle = () => {
+    setRefreshKey((prev) => prev + 1);
   };
+
+  if (loading) return <p>Loading wishlist...</p>;
+
+  if (!posts.length) return <p>No posts in your wishlist.</p>;
 
   return (
     <div className="p-4 space-y-4">
-      {items.length === 0 ? (
-        <p>No items in your wishlist.</p>
-      ) : (
-        items.map((item) => (
-          <div
-            key={item.id}
-            className="p-4 border rounded-md shadow-sm flex justify-between items-center"
-          >
-            <span>{item.name}</span>
-            <button
-              onClick={() => removeItem(item.id)}
-              className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-            >
-              Remove
-            </button>
-          </div>
-        ))
+      {posts.map((post) =>
+        post ? <PostCard key={post._id} post={post} onToggle={handleToggle}/> : null
       )}
     </div>
   );

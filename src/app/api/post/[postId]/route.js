@@ -55,3 +55,39 @@ export async function DELETE(req, { params }) {
     );
   }
 }
+
+//delete from wishlist
+
+export async function DELETE(req, context) {
+  try {
+     const postId =await context.params.postId;
+     const { userId } = await req.URL();
+
+    // Validate ObjectIds
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(postId)) {
+      return new Response(JSON.stringify({ message: "Invalid userId or postId" }), { status: 400 });
+    }
+
+    await connect();
+
+    // Remove the post from the user's wishlist
+    const wishlist = await Wishlist.findOneAndUpdate(
+      { userId },
+      { $pull: { posts: { postId } } },
+      { new: true }
+    ).populate("posts.postId");
+
+    if (!wishlist) {
+      return new Response(JSON.stringify({ message: "Wishlist not found" }), { status: 404 });
+    }
+
+    return new Response(
+      JSON.stringify({ message: "Post removed from wishlist", wishlist }),
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify({ error: "Server error" }), { status: 500 });
+  }
+}
+
