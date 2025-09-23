@@ -2,19 +2,19 @@
 
 const categoriesWithSkills = {
   "Construction & Home Services": [
-    "POP Designing (Ceiling, wall designs)",
-    "Electrician (Wiring, electrical repairs, installations)",
-    "Plumbing (Pipes, faucets, water systems)",
-    "Painting (Interior & exterior)",
-    "Carpenter (Furniture, woodwork, custom designs)",
-    "Masonry (Brickwork, stonework)",
+    "POP Designing",
+    "Electrician",
+    "Plumbing",
+    "Painting",
+    "Carpenter",
+    "Masonry",
     "Granite / Tile Installation",
     "Home Renovation Experts",
   ],
   "Mechanic & Vehicle Services": [
     "Bike Mechanic",
     "Car Mechanic",
-    "Auto Mechanic (3-wheelers, rickshaws, small engines)",
+    "Auto Mechanic",
     "Vehicle Painting / Bodywork Specialist",
     "Tire & Wheel Specialist",
   ],

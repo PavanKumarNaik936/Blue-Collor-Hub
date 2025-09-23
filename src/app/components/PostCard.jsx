@@ -29,7 +29,7 @@ export default function PostCard({ post }) {
 
   const commentsRef = useRef(null);
   const ratingsRef = useRef(null);
-
+  // console.log(post);
   // Initialize liked state
   useEffect(() => {
     if (!session) return;
