@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
+import React from "react";
 import {
   FaBars,
   FaTimes,
@@ -11,18 +14,19 @@ import {
   FaPlus,
   FaSignOutAlt,
 } from "react-icons/fa";
+
 import CategoriesDropdown from "../components/CategoriesDropdown";
-import ChatSupport from "../components/ChatSupport";
-import { useSession, signOut } from "next-auth/react";
-import { usePathname, useRouter } from "next/navigation";
 import SearchBar from "../components/SearchBar";
+import ChatSupport from "../components/ChatSupport";
+import PendingRequests from "../components/PendingRequests";
+import ConnectedUsers from "../components/ConnectedUsers";
+
 import categoriesWithSkills from "@/data/categoriesWithSkills";
-import React from "react";
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All Categories");
-  const [mounted, setMounted] = useState(false); // client-only
+  const [mounted, setMounted] = useState(false);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -33,7 +37,7 @@ export default function DashboardLayout({ children }) {
   const activeSection = pathname?.split("/")[2] || "posts";
 
   const categories = ["All Categories", ...Object.keys(categoriesWithSkills)];
-
+  const [chatWith, setChatWith] = useState(null);
   const sidebarItems = [
     { key: "posts", label: "Posts", icon: <FaHome size={18} /> },
     { key: "wishlist", label: "Wishlist", icon: <FaHeart size={18} /> },
@@ -41,12 +45,10 @@ export default function DashboardLayout({ children }) {
     { key: "profile", label: "Profile", icon: <FaUser size={18} /> },
   ];
 
-  // Client-only mount to avoid hydration issues
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -57,14 +59,10 @@ export default function DashboardLayout({ children }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Pass sidebarOpen to children dynamically
   const childrenWithSidebar = React.Children.map(children, (child) =>
-    React.isValidElement(child)
-      ? React.cloneElement(child, { sidebarOpen })
-      : child
+    React.isValidElement(child) ? React.cloneElement(child, { sidebarOpen }) : child
   );
 
-  // Unified handler for category/skill click
   const handleCategorySearch = (category, skill = null) => {
     setActiveCategory(category);
     setShowAllCategories(false);
@@ -86,10 +84,17 @@ export default function DashboardLayout({ children }) {
       >
         {/* Logo + Toggle */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className={`${sidebarOpen ? "text-black text-2xl font-bold tracking-wide" : "hidden"}`}>
+          <div
+            className={`${
+              sidebarOpen ? "text-black text-2xl font-bold tracking-wide" : "hidden"
+            }`}
+          >
             BlueCollorHub
           </div>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded hover:bg-gray-100 transition">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded hover:bg-gray-100 transition"
+          >
             {sidebarOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
           </button>
         </div>
@@ -136,7 +141,11 @@ export default function DashboardLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <select className={`${sidebarOpen ? "w-22" : "w-32"} border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-black`}>
+            <select
+              className={`${
+                sidebarOpen ? "w-22" : "w-32"
+              } border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-black text-black`}
+            >
               <option>EN</option>
               <option>ES</option>
               <option>FR</option>
@@ -147,7 +156,9 @@ export default function DashboardLayout({ children }) {
               className="group flex items-center gap-2 px-6 py-2 rounded-full border border-black bg-black text-white"
             >
               <FaPlus className="transition-colors duration-300 text-white group-hover:text-black" />
-              <span className="transition-colors duration-300 text-white group-hover:text-black">Create</span>
+              <span className="transition-colors duration-300 text-white group-hover:text-black">
+                Create
+              </span>
             </button>
 
             <div className="relative w-10 h-10 rounded-full overflow-hidden cursor-pointer">
@@ -178,13 +189,13 @@ export default function DashboardLayout({ children }) {
             >
               All Categories ▾
             </button>
-            {showAllCategories && (
-              <CategoriesDropdown onSkillClick={handleCategorySearch} />
-            )}
+            {showAllCategories && <CategoriesDropdown onSkillClick={handleCategorySearch} />}
           </div>
 
-          {/* Scrollable Categories */}
-          <div className="w-200 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          <div
+            className="w-200 overflow-x-auto"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             <div className="flex gap-3 min-w-max" style={{ overflow: "hidden" }}>
               {categories
                 .filter((cat) => cat !== "All Categories")
@@ -211,16 +222,22 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-6 relative">
-          {childrenWithSidebar}
-        </main>
+        {/* Main content + right side components */}
+        <div className="flex flex-1 overflow-hidden relative">
+          <main className="flex-1 overflow-y-auto p-6">{childrenWithSidebar}</main>
+
+          {/* Right side panel */}
+          <aside className="w-64 bg-white border-l border-gray-200 flex flex-col p-4 gap-6 overflow-y-auto">
+            {/* Pending Requests on top */}
+            <PendingRequests />
+
+            {/* Connected Users below */}
+            <ConnectedUsers setChatWith={setChatWith} selectedUser={chatWith} />
+          </aside>
+        </div>
       </div>
 
-      {/* Chat Support Overlay */}
-      {mounted && activeSection === "chat" && (
-        <ChatSupport sidebarOpen={sidebarOpen} />
-      )}
+     
     </div>
   );
 }

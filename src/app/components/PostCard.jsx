@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
+import ConnectButton from "./ConnectButton";
 import { 
   FaHeart, FaRegHeart, FaComment, FaStar, FaPaperPlane, 
   FaChevronLeft, FaChevronRight, FaTimes 
@@ -137,15 +138,17 @@ useEffect(() => {
       {/* Post Creator */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
-          <img src={post.userId?.profilePic || "https://i.pravatar.cc/150?img=12"} alt="User Avatar" className="w-12 h-12 rounded-full object-cover" />
+          <img
+            src={post.userId?.profilePic || "https://i.pravatar.cc/150?img=12"}
+            alt="User Avatar"
+            className="w-12 h-12 rounded-full object-cover"
+          />
           <div>
             <p className="font-semibold">{post.userId?.name || "User"}</p>
             <p className="text-gray-500 text-sm">{post.userId?.title || ""}</p>
           </div>
         </div>
-        <button className="px-4 py-1 text-black font-semibold border border-black rounded-md hover:bg-black hover:text-white transition">
-          Connect
-        </button>
+        <ConnectButton senderId={currentUserId} receiverId={post.userId?._id} />
       </div>
 
       {/* Post Title & Description */}

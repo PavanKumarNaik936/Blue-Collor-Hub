@@ -31,7 +31,7 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-center gap-4 w-full max-w-3xl mx-auto p-3">
+    <div className="flex flex-row md:flex-row items-center gap-4 w-full max-w-3xl mx-auto p-3">
       
       {/* Modern Location Selectors */}
       <div className="flex items-center gap-2 bg-white border border-black rounded-lg p-2 shadow-sm">

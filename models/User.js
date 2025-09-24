@@ -11,6 +11,10 @@ const userSchema = new mongoose.Schema(
     title: { type: String, default: null },
     skills: { type: [String], default: [] },
     connections: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    // Add this to your current userSchema if you want to track requests
+    pendingRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // incoming requests
+    sentRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],    // outgoing requests
+
     location: {
       type: { type: String, enum: ["Point"], default: "Point" },
       coordinates: { type: [Number], default: [0, 0] },
